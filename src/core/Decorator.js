@@ -3,7 +3,6 @@ import {isFunction} from "./const";
 export const symbolPrefix = Symbol('prefix');
 
 const handlerAOP = (aop,context,arg)=>{
-
 }
 // 环绕方法配置优先
 export const AOP = function (aop) {
