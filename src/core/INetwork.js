@@ -1,13 +1,13 @@
-import Axios                            from 'axios'
-import {initHeader,getTransformRequest} from "./helper";
+import {initHeader,getTransformRequest,axiosInterceptor} from "./axiosHelper";
 import {NoticeType,loop,getIn}                     from "./const";
-
-export default class INetwork {
+class INetwork {
     constructor() {
         this.init();
+        this.initNotice()
     }
     static handle = [];
     static instance;
+    static Notice = {};
     static use(){
         this.handle.forEach((fn)=>{
             if(typeof fn === "function") {
@@ -15,36 +15,67 @@ export default class INetwork {
             }
         })
     }
-    static create(config){
-        if(!this.instance){
-            getTransformRequest(config)
-            this.instance = Axios.create(config);
-            initHeader(this.instance);
-        }
-        return this.instance
-    }
+    static create(){
 
-    init(){
-        this.instance = INetwork.instance;
-        if(this.instance){
-            this.instance.interceptors.request.use(
-                (config)=>{
-                    const result = this.interceptorRequest(config);
-                    return result ? result : config;
-                },
-                (error)=>{
-                    return this.requestError(error)
+    }
+    static axiosCreate(config,Axios){
+        const defaultConfig = {
+            // 请求的接口，在请求的时候，如axios.get(url,config);这里的url会覆盖掉config中的url
+            url: '',
+            withCredentials: true,
+            crossDomain: true,
+            // 请求方法同上
+            method: 'post', // default
+            // 基础url前缀
+            baseURL: '',
+            transformRequest: [
+            ],
+            transformResponse: [
+                function(data) {
+                    // 这里提前处理返回的数据
+                    try {
+                        return JSON.parse(data)
+                    } catch (e) {
+                        return data
+                    }
                 }
-            )
-            this.intance.interceptors.response.use(
-                (response)=>{
-                    return this.interceptorResponse(response)
-                },
-                (error)=>{
-                    return this.responseError(error)
-                }
-            )
+            ],
+
+            // 请求头信息
+            headers: {},
+
+            // parameter参数
+            params: {},
+
+            // post参数，使用axios.post(url,{},config);如果没有额外的也必须要用一个空对象，否则会报错
+            data: {},
+            // 设置超时时间
+            timeout: 50000,
+            // 返回数据类型
+            responseType: 'json' // default
         }
+        const params = Object.assign({},defaultConfig,config)
+        if(!this.axiosInstance){
+            getTransformRequest(params)
+            this.axiosInstance = Axios.create(params);
+            initHeader(Axios);
+            this.instance = this.axiosInstance
+        }
+        return this.axiosInstance
+    }
+    init(){
+        if(!INetwork.axiosInstance){
+            if(!INetwork.instance) {
+                throw new Error(`请事实现INetwork静态防火create，或者实现axiosCreate方法`)
+            } else {
+
+            }
+        } else if(INetwork.axiosInstance){
+         this.instance = INetwork.axiosInstance
+         return  axiosInterceptor(this)
+        }
+    }
+    initNotice(){
         this.Notice = new Proxy(INetwork.Notice,{
             set (target, key, value, receiver) {
                 if(!value) {
@@ -62,7 +93,7 @@ export default class INetwork {
             },
             get :(target, key, receiver)=>{
                 const typeFun =  getIn(target,[key],loop);
-                return typeFun.call(this);
+                return typeFun;
             }
         })
     }
@@ -78,10 +109,6 @@ export default class INetwork {
     responseError(){
         throw new Error('请实现该方法')
     }
-    initNotice(){
-
-        throw new Error('请实现该方法')
-    }
     isSuccess(){
         throw new Error('请实现该方法')
     }
@@ -89,3 +116,18 @@ export default class INetwork {
         throw new Error('请实现该方法')
     }
 }
+INetwork.create = new Proxy(INetwork.create,{
+    set(target, p, value, receiver) {
+        if(typeof value !=="function") {
+            throw new Error('create是个方法')
+        }
+        const handle = function (...arg) {
+            this.instance = value.call(INetwork,...arg);
+        }.bind(INetwork)
+        return Reflect.set(target,p,handle,receiver);
+    },
+    get(target, p, receiver) {
+        return target[p]
+    }
+});
+export default INetwork

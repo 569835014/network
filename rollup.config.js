@@ -2,6 +2,9 @@ import resolve from 'rollup-plugin-node-resolve'
 import commonjs from 'rollup-plugin-commonjs'
 import sourceMaps from 'rollup-plugin-sourcemaps'
 import babel from 'rollup-plugin-babel';
+import  { uglify } from 'rollup-plugin-uglify'
+import json from '@rollup/plugin-json';
+import builtins from 'rollup-plugin-node-builtins';
 import pkg  from './package.json'
 module.exports = {
     input:'src/index.js',
@@ -13,11 +16,14 @@ module.exports = {
             name:"network"
         }
     ],
+    global:{
+        'axios':'axios',
+        'qs':'Qs'
+    },
     plugins: [
         babel({
             runtimeHelpers: true,
-            exclude: 'node_modules/**',
-            include:'src/**',
+
         }),
         // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
         commonjs(),
@@ -28,5 +34,7 @@ module.exports = {
 
         // Resolve source maps to the original source
         sourceMaps(),
+        json(),
+        builtins()
     ],
 }

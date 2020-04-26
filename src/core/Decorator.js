@@ -1,27 +1,35 @@
 import {isFunction} from "./const";
+import {getIn} from "./const";
 
 export const symbolPrefix = Symbol('prefix');
 
-const handlerAOP = (aop,context,arg)=>{
+const handlerAOP = async (aop,key,context)=>{
+  const handle = getIn(aop,[key]);
+  const contextHandle = getIn(context,[key]);
+  if(typeof handle === 'function'){
+   return handle.bind(context)
+  } else if(typeof contextHandle === 'function'){
+   return  contextHandle.bind(context)
+  }
 }
 // 环绕方法配置优先
 export const AOP = function (aop) {
   return function (target, key, descriptor) {
     const { value } = descriptor;
     descriptor.value = async function (...arg) {
-      // 装饰器的参数为
+      // 装饰器的参数为函数的时候直接执行
       if (isFunction(aop)) {
-        aop.call(this, ...arg);
-      } else if (aop && aop.before && typeof aop.before === 'function') {
-        aop.before(this, ...arg);
-      } else if (this.before) {
-        await this.before(...arg);
+        await aop.call(this, ...arg);
+      } else {
+        const before = handlerAOP(aop,'before',this);
+        if(typeof before ==='function'){
+          await before(...arg)
+        }
       }
       let result = await value.call(this, ...arg);
-      if (aop && aop.after && typeof aop.after === 'function') {
-        result = (await aop.after.apply(this, [result, ...arg])) || result;
-      } else {
-        result = ((await this.after) && this.after(result, ...arg)) || result;
+      const after = handlerAOP(aop,'after',this)
+      if(typeof after === "function"){
+        result = await after(result,...arg)
       }
       return result;
     };
@@ -62,7 +70,6 @@ function baseMethods(target, key, descriptor, name, path, successNotice) {
     }
     arg.url = target[symbolPrefix] ? target[symbolPrefix] + arg.url : arg.url;
     arg.successNotice = successNotice;
-
     arg.method = name;
     matching(arg);
     return await method.call(this, arg);

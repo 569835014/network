@@ -8,8 +8,8 @@ const METHODS = [  'get' , 'GET'
     , 'patch' , 'PATCH'
     , 'link' , 'LINK'
     , 'unlink' , 'UNLINK'];
-export const POST_METHODS = ['get','options','head']
-export const GET_METHODS = ['post','put','delete','patch']
+export const  GET_METHODS = ['get','options','head']
+export const  POST_METHODS = ['post','put','delete','patch']
 export const Low_Methods = [...new Set(METHODS.map((item)=>{
     return item.toLowerCase();
 }))];
@@ -23,9 +23,9 @@ export const loop = ()=>{}
 export const getIn = (target,keys,defaultValue)=>{
     try {
         const res = keys.reduce((res,key)=>{
-            res = target[key]
+            res = res[key]
             return res;
-        },undefined)
+        },target)
         if(res === undefined || res === null) return defaultValue;
         return res
     }catch ( e ) {

@@ -43,13 +43,11 @@ export default class Network extends INetwork{
             handleLif('error',options,this,e)
         }
         // 设置了返回数据的话 则返回 data数据
-        if(options.haveData) return res;
+        if(options.boolean) return isSuccess;
         // 否则返回 boolean 适用于删除之类的操作
-        return isSuccess
+        return res
     }
     success(){}
     abnormal(){}
     error(){}
-    before(){}
-    after(){}
 }
