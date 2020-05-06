@@ -8,6 +8,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 # Runtime data
+example/nest-api/node_modules/
 example/server/node_modules/
 example/vue/node_modules/
 example/vue/dist/
