@@ -19,26 +19,28 @@ export default class Network extends INetwork{
         }
         return this.instance(options)
     }
-
     async common(options,url){
+        let response,isSuccess,res;
         try{
-            const response = await this.send(options,url);
-            const isSuccess = this.isSuccess(response)
-            const res = this.transformRes(response);
+            response = await this.send(options,url);
+            isSuccess = this.isSuccess(response)
+            res = this.transformRes(response);
             if(isSuccess) {
                 if(options.successNotice){
-                    this.Notice.success(res,options)
+                    this.handleNotice(this.Notice.success,{response,options,isSuccess,res})
+
                 }
                 handleLif('success',options,this,res)
             } else {
                 if(!options.closeNotice){
-                    this.Notice.warning(res,options)
+                    this.handleNotice(this.Notice.warning,{response,options,isSuccess,res})
                 }
                 handleLif('abnormal',options,this,res)
             }
         }catch (e) {
+            console.error(e);
             if(!options.closeNotice){
-                this.Notice.error(e,options)
+                this.handleNotice(this.Notice.error,{response,options,isSuccess,res},e)
             }
             handleLif('error',options,this,e)
         }

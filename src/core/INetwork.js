@@ -55,25 +55,40 @@ class INetwork {
             responseType: 'json' // default
         }
         const params = Object.assign({},defaultConfig,config)
-        if(!this.axiosInstance){
+        INetwork.defaultConfig = params
+        if(!INetwork.axiosInstance){
             getTransformRequest(params)
-            this.axiosInstance = Axios.create(params);
+            INetwork.axiosInstance = Axios.create(params);
             initHeader(Axios);
-            this.instance = this.axiosInstance
+            INetwork.instance = INetwork.axiosInstance
         }
-        return this.axiosInstance
+        return INetwork.axiosInstance
+
     }
     init(){
-        if(!INetwork.axiosInstance){
-            if(!INetwork.instance) {
-                throw new Error(`请事实现INetwork静态防火create，或者实现axiosCreate方法`)
-            } else {
-
+        let axiosInstance;
+        Object.defineProperty(this,'instance',{
+            get(value) {
+                if(value) return value
+                return  INetwork.axiosInstance;
+            },
+            set(value) {
+                if(this.instance !== value){
+                    this.instance = value
+                }
             }
-        } else if(INetwork.axiosInstance){
-         this.instance = INetwork.axiosInstance
-         return  axiosInterceptor(this)
-        }
+        })
+        Object.defineProperty(INetwork,'axiosInstance',{
+            get() {
+                return axiosInstance
+            },
+            set:(newValue)=>{
+                if(newValue !== axiosInstance){
+                    axiosInstance = newValue
+                    axiosInterceptor(this)
+                }
+            }
+        })
     }
     initNotice(){
         this.Notice = new Proxy(INetwork.Notice,{
@@ -92,28 +107,31 @@ class INetwork {
                 return Reflect.set(target,notice,value,receiver);
             },
             get :(target, key, receiver)=>{
-                const typeFun =  getIn(target,[key],loop);
+                const typeFun =  getIn(INetwork.Notice,[key],loop);
                 return typeFun;
             }
         })
     }
     interceptorRequest(config){
-        throw new Error('请实现该方法')
+        throw new Error('请实现前置拦截器')
     }
     interceptorResponse(response){
-        throw new Error('请实现该方法')
+        throw new Error('请实现后置拦截器')
     }
     requestError(){
-        throw new Error('请实现该方法')
+        throw new Error('请实现前置错误拦截器')
     }
     responseError(){
-        throw new Error('请实现该方法')
+        throw new Error('请实现后置错误拦截器')
     }
     isSuccess(){
-        throw new Error('请实现该方法')
+        throw new Error('请实现判断正常返回判断方法')
     }
     transformRes(){
-        throw new Error('请实现该方法')
+        throw new Error('请实现返回数据转换方法')
+    }
+    handleNotice(){
+        throw new Error('请实现通知栏触发函数')
     }
 }
 INetwork.create = new Proxy(INetwork.create,{
