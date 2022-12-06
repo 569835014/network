@@ -10,7 +10,7 @@
   "dependencies": {
     "@rollup/plugin-json": "^4.0.2",
     "axios": "^0.18.0",
-    "qs": "^6.9.3",
+    "qs": "^6.9.7",
     "rollup-plugin-node-builtins": "^2.1.2"
   },
   "devDependencies": {
